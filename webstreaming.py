@@ -1,6 +1,3 @@
-# USAGE
-# python webstreaming.py --ip 0.0.0.0 --port 8000
-
 # import the necessary packages
 from imutils import build_montages
 from imutils.video import VideoStream
@@ -18,56 +15,31 @@ import cv2
 import json
 import random
 import numpy as np
+from collections import OrderedDict
 
-# initialize the output frame and a lock used to ensure thread-safe
-# exchanges of the output frames (useful for multiple browsers/tabs
-# are viewing tthe stream)
-frameDict = {}
-lastActive = {}
-outputFrame = None
-outputFrame_dic = {"0" : np.zeros((255,255), np.uint8), "1" : np.zeros((255,255), np.uint8), "2" : np.zeros((255,255), np.uint8)}
-lock = threading.Lock()
+frameDict 		= OrderedDict()
+lastActive 		= {}
+outputFrame 	= None
+outputFrame_dic = {}
+cctv_list 		= []
+lock 			= threading.Lock()
 
 # initialize a flask object
 app = Flask(__name__)
 
 # initialize the ImageHub object
 imageHub = imagezmq.ImageHub()
-
-
-
 time.sleep(2.0)
 
 @app.route("/")
 def index():
 	data = {'username': 'Pang', 'site': 'stackoverflow.com'}
-	cctv_list = [{
-		"id" : "0",
-		"name" : "CCTV 1"
-	},
-	{
-		"id" : "1",
-		"name" : "CCTV 3"
-	},
-	{
-		"id" : "2",
-		"name" : "CCTV 2"
-	}]
 	return render_template("cctv_index.html", data = data, cctv_list = cctv_list)
 
 def detect_motion(frameCount):
-	# grab global references to the video stream, output frame, and
-	# lock variables
 	global imageHub, frameDict, lock, lastActive, outputFrame, outputFrame_dic
-
-	# initialize the dictionary which will contain  information regarding
-	# when a device was last active, then store the last time the check
-	# was made was now
 	lastActiveCheck = datetime.datetime.now()
 
-	# stores the estimated number of Pis, active checking period, and
-	# calculates the duration seconds to wait before making a check to
-	# see if a device was active
 	ESTIMATED_NUM_PIS = 4
 	ACTIVE_CHECK_PERIOD = 10
 	ACTIVE_CHECK_SECONDS = ESTIMATED_NUM_PIS * ACTIVE_CHECK_PERIOD
@@ -83,7 +55,6 @@ def detect_motion(frameCount):
 		if rpiName not in lastActive.keys():
 			print("[INFO] receiving data from {}...".format(rpiName))
 			
-
 		lastActive[rpiName] = datetime.datetime.now()
 
 		# resize the frame to have a maximum width of 400 pixels, then
