@@ -161,21 +161,21 @@
                 </div>
             </div>
             <div class="col-md-9">
-                <div class="row">
-                    
-                        
-                        {% for cctv in cctv_list %}
-                        <div class="col-md-6">
-                            <div class="specpanel ">
-                                <div class="panel-body file-body" style = "height : 350px; padding : 5px">
-                                    <img src="{{ url_for('video_feed', feed_id=cctv.id) }}">
-                                </div>
-                                <div class="panel-footer ">
-                                    <a href="#footer-cctv-{{ cctv.id }}">{{ cctv.name }}</a>
-                                </div>
+                <div class="row" id = "container-cctv">
+                    {% for cctv in cctv_list %}
+                    <div class="col-md-6">
+                        <div class="specpanel ">
+                            <div class="panel-body file-body" style = "height : 350px; padding : 5px">
+                                <img src="{{ url_for('video_feed', feed_id=cctv.id) }}">
+                            </div>
+                            <div class="panel-footer ">
+                                <a href="#footer-cctv-{{ cctv.id }}">{{ cctv.name }}</a>
                             </div>
                         </div>
-                        {% endfor %}                   
+                    </div>
+                    {% endfor %}  
+                        
+                         
                 </div>
 
 
@@ -211,121 +211,119 @@
 
 
 <script>
-"use strict";
 
-/*Function to update the bar chart*/
-function updateBarGraph(chart, data) {
-  chart.data = data;
-  chart.update(0);
-}
+    /*Function to update the bar chart*/
+    function updateBarGraph(chart, data) {
+        chart.data = data;
+        chart.update(0);
+    }
 
-document.addEventListener('DOMContentLoaded',function(){
-$(function () {
+    document.addEventListener('DOMContentLoaded',function(){
+        $(function () {
 
 
-    var lineOptions = {
-        responsive: true
-    };
-    var barOptions = {
-        responsive: true
-    };
-    var doughnutOptions = {
-        responsive: true
-    };
-    var bubleOptions = {
-        responsive: false,
-        legend: {
-            position: 'top',
-            fullWidth : 'false'
-        },
-        
-         scales: {
-            xAxes: [{display: false,
-                    ticks: {
-                            beginAtZero: true,
-                            max: 100
-                            }}],
-            yAxes: [{display: false,
-                    ticks: {
-                            beginAtZero: true,
-                            max: 100
-                            }}],
-        },
-        annotation :{
-            annotations : [
-            {
-            type: 'line',
-            mode: 'horizontal',
-            scaleID: 'y-axis-0',
-            value: 5,
-            borderColor: 'rgb(75, 192, 192)',
-            borderWidth: 4,
-            label: {
-            enabled: false,
-            content: 'Test label'
+            var lineOptions = {
+                responsive: true
+            };
+            var barOptions = {
+                responsive: true
+            };
+            var doughnutOptions = {
+                responsive: true
+            };
+            var bubleOptions = {
+                responsive: false,
+                legend: {
+                    position: 'top',
+                    fullWidth : 'false'
+                },
+                
+                scales: {
+                    xAxes: [{display: false,
+                            ticks: {
+                                    beginAtZero: true,
+                                    max: 100
+                                    }}],
+                    yAxes: [{display: false,
+                            ticks: {
+                                    beginAtZero: true,
+                                    max: 100
+                                    }}],
+                },
+                annotation :{
+                    annotations : [
+                    {
+                    type: 'line',
+                    mode: 'horizontal',
+                    scaleID: 'y-axis-0',
+                    value: 5,
+                    borderColor: 'rgb(75, 192, 192)',
+                    borderWidth: 4,
+                    label: {
+                    enabled: false,
+                    content: 'Test label'
 
-            }
-            }]
+                    }
+                    }]
 
-        }
-    };
+                }
+            };
 
-    //Let's updatedDataSet[] be the array to hold the upadted data set with every update call
-    var updatedDataSet;
+            //Let's updatedDataSet[] be the array to hold the upadted data set with every update call
+            var updatedDataSet;
 
-    var temp_line  = [];
-    var temp_bar  = [];
-    var temp_pie = [];
-    var temp_scatter = [];
-    $.getJSON('/_getData',
-        function(data){
-            //console.log(data);
-            temp_line = data.data_line_chart;
-            temp_bar = data.data_bar_chart;
-            temp_pie = data.data_pie_chart;
-            temp_scatter = data.data_scatter_chart;
+            var temp_line  = [];
+            var temp_bar  = [];
+            var temp_pie = [];
+            var temp_scatter = [];
+            $.getJSON('/_getData',
+                function(data){
+                    //console.log(data);
+                    temp_line = data.data_line_chart;
+                    temp_bar = data.data_bar_chart;
+                    temp_pie = data.data_pie_chart;
+                    temp_scatter = data.data_scatter_chart;
+                });
+
+            /*Creating the bar chart*/
+            var ctx = document.getElementById("lineChart");
+            var lineChart = new Chart(ctx, {type: 'line',data: temp_line,options: lineOptions});
+
+            var ctx2        = document.getElementById("barChart").getContext("2d");
+            var barChart   = new Chart(ctx2, {type: 'bar', data: temp_bar, options:barOptions});
+
+            var ctx4            =   document.getElementById("doughnutChart").getContext("2d");
+            var doughnutChart   =   new Chart(ctx4, {type: 'doughnut', data: temp_pie, options:doughnutOptions});
+
+            var ctx7 = document.getElementById("BubbleChart");
+            var BubbleChart   =new Chart(ctx7, {
+                type: 'bubble',
+                data:temp_scatter,
+                options : bubleOptions
+            });
+
+            
+
+            /*Updating the bar chart with updated data in every second. */
+            setInterval(function() {
+                $.getJSON('/_getData',
+                function(data){
+                    temp_line = data.data_line_chart;
+                    temp_bar = data.data_bar_chart;
+                    temp_pie = data.data_pie_chart;
+                    temp_scatter = data.data_scatter_chart;
+                });
+
+                //console.log(temp_scatter);
+                //console.log(data_scatter);
+
+                updateBarGraph(lineChart,  temp_line);
+                updateBarGraph(barChart,  temp_bar);
+                updateBarGraph(doughnutChart,  temp_pie);
+                updateBarGraph(BubbleChart,  temp_scatter[0]);
+            }, 1000);
         });
-
-    /*Creating the bar chart*/
-    var ctx = document.getElementById("lineChart");
-    var lineChart = new Chart(ctx, {type: 'line',data: temp_line,options: lineOptions});
-
-    var ctx2        = document.getElementById("barChart").getContext("2d");
-    var barChart   = new Chart(ctx2, {type: 'bar', data: temp_bar, options:barOptions});
-
-    var ctx4            =   document.getElementById("doughnutChart").getContext("2d");
-    var doughnutChart   =   new Chart(ctx4, {type: 'doughnut', data: temp_pie, options:doughnutOptions});
-
-    var ctx7 = document.getElementById("BubbleChart");
-    var BubbleChart   =new Chart(ctx7, {
-        type: 'bubble',
-        data:temp_scatter,
-        options : bubleOptions
     });
-
-    
-
-    /*Updating the bar chart with updated data in every second. */
-    setInterval(function() {
-        $.getJSON('/_getData',
-        function(data){
-            temp_line = data.data_line_chart;
-            temp_bar = data.data_bar_chart;
-            temp_pie = data.data_pie_chart;
-            temp_scatter = data.data_scatter_chart;
-        });
-
-        //console.log(temp_scatter);
-        //console.log(data_scatter);
-
-        updateBarGraph(lineChart,  temp_line);
-        updateBarGraph(barChart,  temp_bar);
-        updateBarGraph(doughnutChart,  temp_pie);
-        updateBarGraph(BubbleChart,  temp_scatter[0]);
-    }, 1000);
-});
-
-});
 
 
 </script>
@@ -429,7 +427,18 @@ $(function () {
 
 </script>
 
+<script>
 
+    var data = {{ cctv_list | tojson }};
+    var i;
+    for (i = 0; i < data.length; i++) {
+        ID = data[i].id.toString();
+        name = data[i].name;
+        html = data[i].html;
+        //$("#container-cctv").append('<div class="col-md-6"><div class="specpanel "><div class="panel-body file-body" style = "height : 350px; padding : 5px"><img src="{{ url_for("video_feed", feed_id=1) }}"></div><div class="panel-footer "><a href="#footer-cctv-0">CCTV 1</a></div></div>')
+    }
+
+</script>
 
 </body>
 </html>

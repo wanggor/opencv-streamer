@@ -19,8 +19,7 @@ from collections import OrderedDict
 
 frameDict 		= OrderedDict()
 lastActive 		= {}
-outputFrame 	= None
-outputFrame_dic = {}
+outputFrame_dic = OrderedDict()
 cctv_list 		= []
 lock 			= threading.Lock()
 
@@ -34,10 +33,25 @@ time.sleep(2.0)
 @app.route("/")
 def index():
 	data = {'username': 'Pang', 'site': 'stackoverflow.com'}
+	cctv_list = [{
+		"id" : "0",
+		"name" : "CCTV 1",
+		"html" : '<div class="col-md-6"><div class="specpanel "><div class="panel-body file-body" style = "height : 350px; padding : 5px"><img src="{{ url_for("video_feed", feed_id=0) }}"></div><div class="panel-footer "><a href="#footer-cctv-0">CCTV 1</a></div></div>'
+	},
+	{
+		"id" : "1",
+		"name" : "CCTV 3",
+		"html" : '<div class="col-md-6"><div class="specpanel "><div class="panel-body file-body" style = "height : 350px; padding : 5px"><img src="{{ url_for("video_feed", feed_id=1) }}"></div><div class="panel-footer "><a href="#footer-cctv-1">CCTV 2</a></div></div>'
+	},
+	{
+		"id" : "2",
+		"name" : "CCTV 2",
+		"html" : '<div class="col-md-6"><div class="specpanel "><div class="panel-body file-body" style = "height : 350px; padding : 5px"><img src="{{ url_for("video_feed", feed_id=2) }}"></div><div class="panel-footer "><a href="#footer-cctv-2">CCTV 3</a></div></div>'
+	}]
 	return render_template("cctv_index.html", data = data, cctv_list = cctv_list)
 
 def detect_motion(frameCount):
-	global imageHub, frameDict, lock, lastActive, outputFrame, outputFrame_dic
+	global imageHub, frameDict, lock, lastActive, outputFrame_dic
 	lastActiveCheck = datetime.datetime.now()
 
 	ESTIMATED_NUM_PIS = 4
@@ -51,34 +65,23 @@ def detect_motion(frameCount):
 
 		if rpiName not in lastActive.keys():
 			print("[INFO] receiving data from {}...".format(rpiName))
-
 		if rpiName not in lastActive.keys():
 			print("[INFO] receiving data from {}...".format(rpiName))
 			
 		lastActive[rpiName] = datetime.datetime.now()
-
 		# resize the frame to have a maximum width of 400 pixels, then
 		# grab the frame dimensions and construct a blob
 		frame = imutils.resize(frame, height=340)
 		(h, w) = frame.shape[:2]
 
-		# draw the sending device name on the frame
-		cv2.putText(frame, rpiName, (10, 25),
-			cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-
 		# update the new frame in the frame dictionary
 		frameDict[rpiName] = frame
-
-		# build a montage using images in the frame dictionary
-		montages = build_montages(frameDict.values(), (w, h), (2, 2))
-		# print(montages)
 
 		for n, i in enumerate(frameDict):
 			if n == 0:
 				# acquire the lock, set the output frame, and release the
 				# lock
 				with lock:
-					outputFrame = frame.copy()
 					outputFrame_dic[str(rpiName)] = frame.copy()
 
 		if (datetime.datetime.now() - lastActiveCheck).seconds > ACTIVE_CHECK_SECONDS:
@@ -96,42 +99,29 @@ def detect_motion(frameCount):
 
 def generate(feed_id):
 	# grab global references to the output frame and lock variables
-	global outputFrame, lock, outputFrame_dic
-
+	global lock, outputFrame_dic
 	# loop over frames from the output stream
 	while True:
 		# wait until the lock is acquired
 		with lock:
-			# print(feed_id, type(feed_id))
-			# check if the output frame is available, otherwise skip
-			# the iteration of the loop
-			# if outputFrame is None:
-			# 	continue
-			# if outputFrame_dic == {}:
-			# 	continue
+			if outputFrame_dic == {}:
+				continue
 			if str(feed_id) not in outputFrame_dic.keys():
 				continue
-		
-			# # encode the frame in JPEG format
-			# (flag, encodedImage) = cv2.imencode(".jpg", outputFrame)
-			
-			# print(feed_id, outputFrame_dic[str(feed_id)])
 
-			# idx = list(outputFrame_dic.keys())[0]
 			(flag, encodedImage) = cv2.imencode(".jpg", outputFrame_dic[str(feed_id)])
-
-
 			# ensure the frame was successfully encoded
 			if not flag:
 				continue
-
 		# yield the output frame in the byte format
 		yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
 			bytearray(encodedImage) + b'\r\n')
 
 @app.route("/video_feed/<int:feed_id>'")
 def video_feed(feed_id):
-	# print("index", feed_id)
+	# feed_id = int(float(feed_id))
+	
+	print("index", feed_id, type(feed_id))
 	return Response(generate(feed_id),
 		mimetype = "multipart/x-mixed-replace; boundary=frame")
 	# return Response("")
@@ -184,18 +174,18 @@ def cctv_status():
 		return x1,y1
 
 	def create_random_scatter(orientation, max_total = 20, dimensi = 100):
-			data = []
-			for i in range(random.randint(0, max_total)):
-				x = random.randint(0, dimensi)
-				y = random.randint(0, dimensi)
-				if y < 95:
-					x, y = normalize(x,y, orientation=orientation)
-					data.append(
-						{"x": x,
-						"y": y,
-						"r": 4}
-					)
-			return data
+		data = []
+		for i in range(random.randint(0, max_total)):
+			x = random.randint(0, dimensi)
+			y = random.randint(0, dimensi)
+			if y < 95:
+				x, y = normalize(x,y, orientation=orientation)
+				data.append(
+					{"x": x,
+					"y": y,
+					"r": 4}
+				)
+		return data
 
 	data_scatter_chart = {
 		"labels": ["Color 1", "Color 2", "Color 3", "Color 4"],
@@ -225,7 +215,8 @@ def cctv_status():
                     "hoverBackgroundColor": "#3291c9",
                 }
             ]
-        },
+	},
+	
 	return jsonify(data_line_chart = data_line_chart, data_bar_chart = data_bar_chart, data_pie_chart = data_pie_chart, data_scatter_chart = data_scatter_chart)
 
 
