@@ -125,6 +125,7 @@ def video_feed(feed_id):
 	return Response(generate(feed_id),
 		mimetype = "multipart/x-mixed-replace; boundary=frame")
 	# return Response("")
+	
 
 @app.route("/_getData", methods = ['GET'])
 def cctv_status():
