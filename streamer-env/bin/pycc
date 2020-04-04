@@ -1,3 +1,0 @@
-#!/home/wanggor/Documents/development/streamer/streamer-env/bin/python
-from numba.pycc import main
-main()
